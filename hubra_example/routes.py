@@ -1,4 +1,4 @@
-"""Example blueprint: /api/v1/example.
+"""Example blueprint: /api/v1/app/example.
 
 ``permission_required(resource, action, label)`` checks the club role of the
 signed-in member; the permission (here ``example.notes.read``) shows up in

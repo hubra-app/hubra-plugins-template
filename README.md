@@ -22,7 +22,7 @@ migration, tests, and the workflow that tests, signs and releases it.
    | Module code (`plugin.yaml` `modules:`, `Module(code=...)`, `module:` in `frontend/src/index.tsx`) | `example` | must not clash with a Hubra module |
    | Blueprint name, which sets the permission prefix | `example_bp` gives `example.notes.read` | `<name>_bp` |
    | Table names, in `models.py`, `tables=` and the migration | `example_notes` | prefix them with your id |
-   | API path | `/api/v1/example` | `/api/v1/<id>` |
+   | API path | `/api/v1/app/example` | `/api/v1/app/<id>` (the club area; plugins cannot add platform or global routes) |
    | Club-app route and nav entry | `/app/example` | |
    | Translations (`shell.nav.example`, `example.*`) | | |
 
