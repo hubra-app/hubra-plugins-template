@@ -17,7 +17,7 @@ module = Module(
         Blueprint(
             "hubra_example.routes",
             "example_bp",
-            "/api/v1/example",
+            "/api/v1/app/example",
         ),
     ),
     nav=(
