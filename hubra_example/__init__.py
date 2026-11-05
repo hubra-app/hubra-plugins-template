@@ -5,6 +5,12 @@ package name (hubra_<something>), the module code, the table and the
 permission resource.
 """
 
+from hubra.core.contracts import (
+    WidgetField,
+    event_contract,
+    query_contract,
+    widget_contract,
+)
 from hubra.core.modules import Blueprint, Module, NavItem, SettingField
 
 module = Module(
@@ -42,4 +48,38 @@ module = Module(
     # Every table the plugin owns: new clubs get them, and autogenerate only
     # looks at these.
     tables=("example_notes",),
+    # What other plugins and the dashboards may use (docs/contracts.md).
+    # Names start with the module code; the version is a whole number that
+    # goes up when a field is removed or changes meaning.
+    provides=(
+        query_contract(
+            "example.notes.latest",
+            "hubra_example.contracts:latest_notes",
+            input="hubra_example.contracts:LatestIn",
+            output="hubra_example.contracts:Note",
+            perm="example.notes.read",
+            description="The newest notes",
+        ),
+        event_contract(
+            "example.note.added",
+            "hubra_example.contracts:NoteAdded",
+            description="A note was added",
+        ),
+        widget_contract(
+            "example.latest",
+            "hubra_example.contracts:latest_widget",
+            # Translation keys (frontend/src/translations.json) or plain text.
+            label="example.widget.latest",
+            description="example.widget.latestHint",
+            size="m",
+            view="list",
+            fields=(
+                WidgetField("count", "example.widget.count", kind="number", default=5),
+            ),
+            perm="example.notes.read",
+        ),
+    ),
+    # To use another plugin's contracts, name them with the versions you
+    # accept; anything not listed is refused. E.g.
+    # consumes={"inventory.items.get": ">=1,<2"},
 )

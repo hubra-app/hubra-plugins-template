@@ -14,7 +14,7 @@ from hubra.api.auth.helpers import get_current_member
 from hubra.api.permissions import permission_required
 from hubra.core.errors import api_error
 from hubra.core.extensions import db
-from hubra.core.modules import get_config
+from hubra.core.modules import emit, get_config
 
 from .models import ExampleNote
 
@@ -51,6 +51,9 @@ def add_note():
     member = get_current_member()
     note = ExampleNote(text=text, author_id=member.id if member else None)
     db.session.add(note)
+    db.session.flush()
+    # Delivered to subscribers after the commit; dropped if it rolls back.
+    emit("example.note.added", note_id=note.id)
     db.session.commit()
     return jsonify(_dict(note)), 201
 

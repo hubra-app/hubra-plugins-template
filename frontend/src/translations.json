@@ -9,7 +9,12 @@
       "saved": "Note posted",
       "delete": "Delete note",
       "loading": "Loading…",
-      "empty": "No notes yet."
+      "empty": "No notes yet.",
+      "widget": {
+        "latest": "Latest notes",
+        "latestHint": "The newest notes on the board",
+        "count": "How many"
+      }
     }
   },
   "de-CH": {
@@ -22,7 +27,12 @@
       "saved": "Notiz gepostet",
       "delete": "Notiz löschen",
       "loading": "Wird geladen …",
-      "empty": "Noch keine Notizen."
+      "empty": "Noch keine Notizen.",
+      "widget": {
+        "latest": "Neueste Notizen",
+        "latestHint": "Die neuesten Notizen am Brett",
+        "count": "Wie viele"
+      }
     }
   }
 }
