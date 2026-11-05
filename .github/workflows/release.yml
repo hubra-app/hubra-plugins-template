@@ -130,6 +130,72 @@ jobs:
           cache-dependency-path: hubra/app/backend/requirements.lock
       - run: pip install --no-deps -r hubra/app/backend/requirements.lock
       - run: pip install pytest pytest-flask
+      # A plugin that uses another plugin's area is an add-on of it: Hubra
+      # shows it under that plugin and checks the version on every install
+      # and update. So the manifest has to say so: every other module the
+      # plugin builds on (its module codes like inventory.keys, the slots it
+      # fills like inventory.item) under requires:, and every plugin those
+      # come from under depends: with a version range.
+      - name: The manifest declares every dependency
+        run: |
+          python - <<'PY'
+          import pathlib, re, sys
+          import yaml
+          from packaging.specifiers import InvalidSpecifier, SpecifierSet
+          root = pathlib.Path("plugin")
+          m = yaml.safe_load((root / "plugin.yaml").read_text()) or {}
+          pid = str(m.get("id", ""))
+          own = [str(c) for c in m.get("modules") or []]
+          requires = [str(c) for c in m.get("requires") or []]
+          depends = m.get("depends") or {}
+          if not isinstance(depends, dict):
+              sys.exit("::error::depends: a mapping of plugin id to version range")
+          # What Hubra itself provides: its modules and the slots its app has.
+          core = set()
+          for f in pathlib.Path("hubra/app/backend/hubra/modules").glob("*.py"):
+              core.update(re.findall(r'\bcode="([a-z][a-z0-9_.]*)"', f.read_text()))
+          slots = set()
+          for f in pathlib.Path("hubra/app/frontend/src").rglob("*.tsx"):
+              if ".test." in f.name:
+                  continue
+              slots.update(re.findall(r'<PluginSlot\s+name="([a-z][a-z0-9_.]*)"', f.read_text()))
+          area = lambda code: code.split(".")[0]
+          mine = {area(c) for c in own if "." not in c} | {pid}
+          used = {}  # area -> where it is used
+          for c in own:
+              if "." in c and area(c) not in mine:
+                  used.setdefault(area(c), f"module {c}")
+          src = root / "frontend" / "src"
+          for f in sorted(src.rglob("*.ts*")) if src.is_dir() else []:
+              for s in re.findall(r"""\bslot:\s*['"]([a-z][a-z0-9_.]*)['"]""", f.read_text()):
+                  if s not in slots and area(s) not in mine and area(s) not in core:
+                      used.setdefault(area(s), f"slot {s} in {f.relative_to(root)}")
+          bad = []
+          for a, where in sorted(used.items()):
+              if not any(r == a or r.startswith(a + ".") for r in requires):
+                  bad.append(f"uses {a} ({where}) but requires: doesn't list it")
+          for r in requires:
+              if r in core or area(r) in mine:
+                  continue
+              rng = depends.get(area(r))
+              if rng in (None, ""):
+                  bad.append(
+                      f"requires {r}, which the plugin {area(r)} provides: name it under "
+                      f'depends: with a version range, e.g. depends: {{{area(r)}: ">=2.0,<3"}}'
+                  )
+          for d, rng in depends.items():
+              try:
+                  SpecifierSet(str(rng or ""))
+              except InvalidSpecifier:
+                  bad.append(f"depends: {d}: '{rng}' isn't a version range like '>=2.0,<3'")
+              if not str(rng or "").strip():
+                  bad.append(f"depends: {d} has no version range")
+          for b in bad:
+              print(f"::error file=plugin.yaml::{b}")
+          if bad:
+              sys.exit("Declare every plugin this one builds on (docs/plugins.md, Add-ons in hubra-app/hubra).")
+          print("Dependencies declared:", ", ".join(f"{d} {r}" for d, r in depends.items()) or "only Hubra")
+          PY
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
