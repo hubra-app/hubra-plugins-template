@@ -73,6 +73,50 @@ jobs:
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
               f.write(f"id={pid}\nversion={ver}\n")
           PY
+      # A plugin uses Hubra and its own code only, never another plugin's:
+      # the other plugin may be missing, switched off or on another version.
+      # Talk to other areas through Hubra's API and slots instead.
+      - name: No imports from other plugins
+        run: |
+          python3 - <<'PY'
+          import ast, pathlib, re, sys
+          root = pathlib.Path("plugin")
+          text = (root / "plugin.yaml").read_text()
+          own = re.search(r"^package:\s*[\"']?([\w]+)", text, re.M).group(1)
+          bad = []
+          for f in sorted(root.rglob("*.py")):
+              if ".git" in f.parts or "node_modules" in f.parts:
+                  continue
+              for node in ast.walk(ast.parse(f.read_text(), str(f))):
+                  if isinstance(node, ast.Import):
+                      names = [a.name for a in node.names]
+                  elif isinstance(node, ast.ImportFrom) and not node.level:
+                      names = [node.module or ""]
+                  else:
+                      continue
+                  for name in names:
+                      top = name.split(".")[0]
+                      # hubra_<x> is another plugin's package; hubra.plugins
+                      # and plugin modules moved out of core count too.
+                      if (top.startswith("hubra_") and top != own) or name.startswith("hubra.plugins."):
+                          bad.append(f"{f.relative_to(root)}:{node.lineno}: {name}")
+          src = root / "frontend" / "src"
+          for f in sorted(src.rglob("*.ts*")) if src.is_dir() else []:
+              for n, line in enumerate(f.read_text().splitlines(), 1):
+                  m = re.search(r"""(?:from|import)\s*\(?\s*['"]([^'"]+)['"]""", line)
+                  if not m:
+                      continue
+                  spec = m.group(1)
+                  resolved = (f.parent / spec).resolve() if spec.startswith(".") else None
+                  if (resolved and src.resolve() not in resolved.parents and resolved != src.resolve()) \
+                          or re.match(r"@hubra/(?!plugin-sdk$)|hubra-plugin-", spec):
+                      bad.append(f"{f.relative_to(root)}:{n}: {spec}")
+          for b in bad:
+              print(f"::error::import from outside this plugin: {b}")
+          if bad:
+              sys.exit("A plugin may import Hubra (hubra.*, @hubra/plugin-sdk) and its own code only.")
+          print("No imports from other plugins.")
+          PY
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: hubra-app/hubra
