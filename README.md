@@ -46,7 +46,7 @@ migration, tests, and the workflow that tests, signs and releases it.
 ## Layout
 
 ```
-plugin.yaml              # id, version, Hubra range, package, modules, requires
+plugin.yaml              # id, version, Hubra range, package, modules, requires, depends
 hubra_example/
   __init__.py            # module = Module(...): blueprint, nav entry, setting, tables
   models.py              # SQLAlchemy models (one copy per club schema)
@@ -70,6 +70,26 @@ screens, slots, connected apps) is in
 and [hubra/modules/README.md](https://github.com/hubra-app/hubra/blob/main/app/backend/hubra/modules/README.md).
 [hubra-plugin-keys](https://github.com/hubra-app/hubra-plugin-keys) is a
 bigger real plugin to compare with.
+
+## Add-ons: plugins that build on another plugin
+
+A plugin that uses another plugin's module (a module code like
+`inventory.keys`, a slot like `inventory.item`) is an **add-on** of it. Hubra
+shows it under that plugin in the Plugin catalogue and on
+plugins.hubra.club, and checks the version on every install and update.
+Declare both the module and the plugin, with the versions you tested:
+
+```yaml
+modules: [inventory.keys]
+requires: [inventory]
+depends:
+  inventory: ">=2.0,<3"
+```
+
+The release workflow fails ("The manifest declares every dependency") when
+an area the plugin uses is missing from `requires:`, or a plugin it requires
+has no version range under `depends:`. The plugin still imports only Hubra
+and its own code; it talks to its parent through Hubra's API and slots.
 
 ## Develop
 
