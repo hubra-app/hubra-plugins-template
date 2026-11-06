@@ -28,6 +28,17 @@ migration, tests, and the workflow that tests, signs and releases it.
 
    Then replace the migration with your own (`0a1b2c3d4e5f_example_notes.py`)
    and set `version: "1.0.0"` and the first `CHANGELOG.md` entry.
+
+   In `.github/workflows/release.yml`, point the workflow at the template
+   instead of the copy, pinned to the newest commit of the template's main,
+   and delete `.github/workflows/plugin.yml`:
+
+   ```yaml
+       uses: hubra-app/hubra-plugins-template/.github/workflows/plugin.yml@<commit> # main
+   ```
+
+   Every plugin then runs the same checks and signs the same way, and a
+   change to them reaches a plugin when you move the pin.
 3. **Set up the repository** (Settings):
    - **Rules › Rulesets › Import a ruleset:** import both files from
      [`.github/rulesets/`](.github/rulesets/). `main.json` protects `main`
@@ -60,7 +71,8 @@ frontend/src/
 tests/test_example.py    # runs with Hubra's pytest fixtures
 CHANGELOG.md             # "## <version>" sections, shown before updating
 .releaseignore           # kept out of the release zip
-.github/workflows/release.yml
+.github/workflows/release.yml   # calls the template's plugin.yml
+.github/workflows/plugin.yml    # test, sign, release (the template's own; plugins use it from here)
 .github/rulesets/        # importable rulesets for main and v* tags
 ```
 
