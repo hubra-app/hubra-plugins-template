@@ -46,3 +46,28 @@ def test_the_plugin_loads_within_its_limits(app):
         spec = loader.current().get("example")
     assert spec is not None and spec.loaded, spec and spec.error
     assert spec.manifest.get("uses") is not None, "list uses: in plugin.yaml"
+
+
+def test_other_plugins_read_notes_through_the_query(client, auth_headers):
+    """What other plugins see: query() checks input and result against the
+    contract's schemas, and the module switch."""
+    from hubra.core.contracts import SYSTEM, query
+
+    set_modules(True, "example")
+    client.post("/api/v1/app/example/notes", json={"text": "First"})
+    client.post("/api/v1/app/example/notes", json={"text": "Second"})
+    notes = query("example.notes.latest", limit=1, actor=SYSTEM)
+    assert [n["text"] for n in notes] == ["Second"]
+
+
+def test_the_widget_lists_the_newest_notes(client, auth_headers):
+    set_modules(True, "example")
+    client.post("/api/v1/app/example/notes", json={"text": "Hello club"})
+    resp = client.post(
+        "/api/v1/app/dashboards/widgets/example.latest/data",
+        json={"config": {"count": 3}},
+    )
+    assert resp.status_code == 200, resp.get_json()
+    body = resp.get_json()["data"]
+    assert body["total"] == 1
+    assert body["items"][0]["label"] == "Hello club"

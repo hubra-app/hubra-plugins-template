@@ -14,7 +14,7 @@ migrations: migrations
 frontend: frontend/dist/plugin.js
 # The areas this plugin extends; Hubra refuses a plugin that touches one it
 # doesn't list. See docs/plugins.md in hubra-app/hubra.
-uses: [routes, tables, settings, nav, frontend]
+uses: [routes, tables, settings, nav, frontend, contracts]
 # Other plugins it needs, with a version range. A plugin that uses another
 # plugin's module (under requires:, in a module code or a slot) is an add-on
 # of it and must name it here; the release check fails otherwise. E.g.

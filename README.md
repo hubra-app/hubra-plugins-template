@@ -71,6 +71,28 @@ and [hubra/modules/README.md](https://github.com/hubra-app/hubra/blob/main/app/b
 [hubra-plugin-keys](https://github.com/hubra-app/hubra-plugin-keys) is a
 bigger real plugin to compare with.
 
+## Talking to other plugins: contracts
+
+A plugin never imports another plugin, reads its tables or calls its REST
+routes from the backend. It offers **contracts** instead, and uses others'
+through Hubra ([docs/contracts.md](https://github.com/hubra-app/hubra/blob/main/docs/contracts.md)):
+
+- `hubra_example/contracts.py` offers a query (`example.notes.latest`), an
+  event (`example.note.added`, sent by `emit()` in `routes.py`) and a
+  dashboard widget (`example.latest`, a list). They are listed under
+  `provides=` in `hubra_example/__init__.py`.
+- To use another plugin's contract, name it under `consumes=` with the
+  versions you accept, then `query("inventory.items.get", ids=[3])`,
+  `call(...)` or `send(...)` from `hubra.core.contracts`. Subscribe to its
+  events under `events=`.
+- `plugin.yaml` lists `contracts` under `uses:`.
+
+Widgets show up in the dashboard catalogue for members who may see them
+(module on, `perm` held). The handler gets the member's settings for the
+widget (`fields=`) and returns a `stat` (`{value, sub?, path?}`) or a `list`
+(`{items: [{label, sub?, path?}], total?}`); Hubra draws both. See
+[docs/dashboards.md](https://github.com/hubra-app/hubra/blob/main/docs/dashboards.md).
+
 ## Add-ons: plugins that build on another plugin
 
 A plugin that uses another plugin's module (a module code like
