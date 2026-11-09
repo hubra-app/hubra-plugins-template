@@ -29,13 +29,20 @@ migration, tests, and the workflow that tests, signs and releases it.
    Then replace the migration with your own (`0a1b2c3d4e5f_example_notes.py`)
    and set `version: "1.0.0"` and the first `CHANGELOG.md` entry.
 
-   In `.github/workflows/release.yml`, point the workflow at the template
-   instead of the copy, pinned to the newest commit of the template's main,
-   and delete `.github/workflows/plugin.yml`:
+   In `.github/workflows/release.yml`, point the three `uses:` at the
+   template instead of the copies, pinned to the newest commit of the
+   template's main, and delete `.github/workflows/plugin.yml`,
+   `.github/workflows/publish.yml` and `.github/actions/`:
 
    ```yaml
        uses: hubra-app/hubra-plugins-template/.github/workflows/plugin.yml@<commit> # main
+         - uses: hubra-app/hubra-plugins-template/.github/actions/sign@<commit> # main
+       uses: hubra-app/hubra-plugins-template/.github/workflows/publish.yml@<commit> # main
    ```
+
+   Keep the `sign` job itself in your `release.yml`: the signing key is an
+   environment secret, and only a job of the plugin's own workflow that
+   names the environment gets it.
 
    Every plugin then runs the same checks and signs the same way, and a
    change to them reaches a plugin when you move the pin.
@@ -72,8 +79,10 @@ tests/test_example.py    # runs with Hubra's pytest fixtures
 CHANGELOG.md             # "## <version>" sections, shown before updating
 .releaseignore           # kept out of the release zip
 .mason.toml              # where Mason finds the version, changelog and tag
-.github/workflows/release.yml   # calls the template's plugin.yml
-.github/workflows/plugin.yml    # test, sign, release (the template's own; plugins use it from here)
+.github/workflows/release.yml   # test, sign job, release: calls the template's files
+.github/workflows/plugin.yml    # tests (the template's own; plugins use it from here)
+.github/actions/sign/           # signs and packs, run by the sign job
+.github/workflows/publish.yml   # publishes the GitHub release
 .github/rulesets/        # importable rulesets for main and v* tags
 ```
 
