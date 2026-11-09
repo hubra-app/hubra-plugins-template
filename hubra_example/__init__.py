@@ -18,6 +18,11 @@ module = Module(
     name="Example",
     description="A notice board: short notes for the whole club",
     default_enabled=False,
+    # Which standard roles get the module, and at which level, when a club
+    # switches it on for the first time (docs/roles.md in hubra-app/hubra).
+    # Without it only admins see the module until the club gives a role
+    # access on Einstellungen › Rollen.
+    role_defaults={"member": "view", "board": "edit", "secretary": "all"},
     depends_on=("members",),
     blueprints=(
         Blueprint(

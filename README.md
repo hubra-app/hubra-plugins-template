@@ -5,7 +5,7 @@ small plugin that works and uses every part a plugin has: a notice board
 with one table, an API, a screen in the club app, a module setting, a
 migration, tests, and the workflow that tests, signs and releases it.
 
-**Plugin id** `example` · **Package** `hubra_example` · **Module** `example` · **Works with** Hubra `>=0.2,<1`
+**Plugin id** `example` · **Package** `hubra_example` · **Module** `example` · **Works with** Hubra `>=0.2.5,<1`
 
 ## Make a new plugin
 
@@ -92,6 +92,25 @@ screens, slots, connected apps) is in
 and [hubra/modules/README.md](https://github.com/hubra-app/hubra/blob/main/app/backend/hubra/modules/README.md).
 [hubra-plugin-keys](https://github.com/hubra-app/hubra-plugin-keys) is a
 bigger real plugin to compare with.
+
+## Who sees the plugin: `role_defaults`
+
+A role without access to a module doesn't see it at all: not in the
+sidebar, on its pages or in its API (`403 MODULE_ACCESS`). Members still see
+their own data from it on routes under `/mine` or `/my-…`. `role_defaults`
+in `Module(...)` says which standard roles get the module, and at which
+level, when a club switches it on for the first time:
+
+```python
+role_defaults={"member": "view", "board": "edit", "secretary": "all"},
+```
+
+Roles: `member` (Mitglied), `board` (Vorstand), `secretary` (Aktuar/in),
+`treasurer` (Kassier/in); admins have everything anyway. Levels: `view`,
+`edit`, `all`, as on Einstellungen › Rollen. They are given once and only
+added, so what the club changes later stays. Without `role_defaults` only
+admins see the module until the club gives a role access. Needs Hubra 0.2.5
+or later ([docs/roles.md](https://github.com/hubra-app/hubra/blob/main/docs/roles.md)).
 
 ## Talking to other plugins: contracts
 
