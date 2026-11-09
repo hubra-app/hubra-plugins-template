@@ -71,6 +71,7 @@ frontend/src/
 tests/test_example.py    # runs with Hubra's pytest fixtures
 CHANGELOG.md             # "## <version>" sections, shown before updating
 .releaseignore           # kept out of the release zip
+.mason.toml              # where Mason finds the version, changelog and tag
 .github/workflows/release.yml   # calls the template's plugin.yml
 .github/workflows/plugin.yml    # test, sign, release (the template's own; plugins use it from here)
 .github/rulesets/        # importable rulesets for main and v* tags
@@ -150,6 +151,10 @@ Bump `version` in `plugin.yaml`, add a `## <version>` section to
 git switch main && git pull
 git tag v<version> && git push origin v<version>
 ```
+
+With [Mason](https://github.com/bitsandbricks-ch/mason-cli), `mason bump <repo> minor`
+opens the bump PR and `mason release tag <repo>` pushes the tag; `.mason.toml`
+tells it to use `plugin.yaml`, `CHANGELOG.md` and `v<version>`.
 
 The workflow tests the plugin and builds its frontend, the `plugin-signing`
 job signs it after your approval, and only then is the GitHub release
