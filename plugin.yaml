@@ -1,7 +1,7 @@
 id: example
 name: Example
 version: "0.1.0"
-hubra: ">=0.2,<1"
+hubra: ">=0.2.5,<1"
 description: "A starting point for a Hubra plugin: one table, an API, a screen and a test."
 author: Hubra
 homepage: https://github.com/hubra-app/hubra-plugins-template
