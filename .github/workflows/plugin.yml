@@ -5,7 +5,8 @@ name: Plugin
 # plugin when its release.yml points at the new commit.
 #
 # Every push and pull request runs the plugin's tests and type check against
-# Hubra's main. On a tag that matches plugin.yaml (v1.3.0 for version 1.3.0)
+# Hubra's main. The audit job checks the dependencies for known
+# vulnerabilities (pip-audit, npm audit). On a tag that matches plugin.yaml (v1.3.0 for version 1.3.0)
 # it also builds the frontend for the sign job.
 #
 # Signing and publishing are not in here, because a job of a called workflow
@@ -226,3 +227,57 @@ jobs:
           path: hubra/plugins/${{ steps.manifest.outputs.id }}/frontend/dist/
           if-no-files-found: ignore
           retention-days: 1
+
+  # Known vulnerabilities in the dependencies a plugin runs and ships with:
+  # Hubra's locked backend packages (the plugin runs in Hubra's Python), the
+  # runtime packages of Hubra's frontend (bundled into the plugin's
+  # plugin.js), and any dependency files the plugin has of its own. Every
+  # step runs even when an earlier one failed, so one run shows all findings.
+  # The same checks and versions as Hubra's own release checks.
+  audit:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: plugin
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: hubra-app/hubra
+          path: hubra
+          token: ${{ secrets.HUBRA_READ_TOKEN || github.token }}
+          persist-credentials: false
+          sparse-checkout: |
+            app/backend/requirements.lock
+            app/frontend/package.json
+            app/frontend/package-lock.json
+          sparse-checkout-cone-mode: false
+      - name: pip-audit, Hubra's backend
+        if: ${{ !cancelled() }}
+        run: pipx run pip-audit==2.10.0 -r hubra/app/backend/requirements.lock --no-deps --disable-pip
+      - name: npm audit, Hubra's frontend (runtime, high and critical)
+        if: ${{ !cancelled() }}
+        working-directory: hubra/app/frontend
+        run: npm audit --omit=dev --audit-level=high
+      - name: pip-audit, the plugin's own Python dependencies
+        if: ${{ !cancelled() }}
+        working-directory: plugin
+        run: |
+          shopt -s nullglob
+          files=(requirements*.txt requirements*.lock)
+          if [ ${#files[@]} -eq 0 ]; then echo "No Python dependencies of its own."; exit 0; fi
+          args=()
+          for f in "${files[@]}"; do args+=(-r "$f"); done
+          pipx run pip-audit==2.10.0 "${args[@]}"
+      - name: npm audit, the plugin's own frontend dependencies
+        if: ${{ !cancelled() }}
+        working-directory: plugin
+        run: |
+          if [ ! -f frontend/package.json ]; then echo "No frontend dependencies of its own."; exit 0; fi
+          if [ ! -f frontend/package-lock.json ]; then
+            echo "::error file=frontend/package.json::commit frontend/package-lock.json, so its dependencies can be audited"
+            exit 1
+          fi
+          cd frontend && npm audit --omit=dev --audit-level=high
