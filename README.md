@@ -1,5 +1,7 @@
 # Hubra plugin template
 
+[![Test and release](https://github.com/hubra-app/hubra-plugins-template/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/hubra-app/hubra-plugins-template/actions/workflows/release.yml?query=branch%3Amain) [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-bitsandbricks-ffdd00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/bitsandbricks)
+
 Start a new [Hubra](https://hubra.club) plugin from here. The template is a
 small plugin that works and uses every part a plugin has: a notice board
 with one table, an API, a screen in the club app, a module setting, a
