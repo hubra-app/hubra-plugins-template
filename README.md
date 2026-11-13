@@ -136,6 +136,35 @@ widget (`fields=`) and returns a `stat` (`{value, sub?, path?}`) or a `list`
 (`{items: [{label, sub?, path?}], total?}`); Hubra draws both. See
 [docs/dashboards.md](https://github.com/hubra-app/hubra/blob/main/docs/dashboards.md).
 
+## Personal data: export and deletion
+
+Hubra puts every row that points at a member through a foreign key to
+`members.id` into the member's privacy export, and deletes or anonymises it
+with the member (`ondelete`). A plugin that keeps more about a member (an
+e-mail, an IBAN or an address that outlives the member, a member id without
+a foreign key, data in another service) offers `<module>.privacy.export` and
+`<module>.privacy.erase` with `privacy_contracts()`
+([docs/contracts.md, Privacy](https://github.com/hubra-app/hubra/blob/main/docs/contracts.md#privacy-export-and-deletion)):
+
+```python
+from hubra.core.contracts.privacy import privacy_contracts
+
+provides=(
+    *privacy_contracts(
+        "example",
+        export="hubra_example.privacy:export",
+        erase="hubra_example.privacy:erase",
+    ),
+)
+```
+
+The release workflow fails ("Personal data goes with the member") when a
+table has such a column and the plugin offers neither, or when an offer
+names a handler that doesn't exist. A column that holds no member's data
+(a sponsor's office e-mail, a Stripe account of the club) says so on its
+line: `email = mapped_column(String(255))  # privacy: the sponsor's office`.
+Needs Hubra with the privacy contracts (hubra#331).
+
 ## Add-ons: plugins that build on another plugin
 
 A plugin that uses another plugin's module (a module code like
